@@ -19,6 +19,7 @@ contract OrderBook is HederaTokenService {
     Order[] Sells;
     IERC20 public ERC20Base; //USD
     IERC20 public ERC20Counter; //Gold
+
     address owner;
 
     modifier onlyOwner() {
@@ -40,29 +41,29 @@ contract OrderBook is HederaTokenService {
 
     event TradeAdd(uint indexed Order_No, uint Amt, uint Price, address maker, address taker);
 
-    function addBuy(uint Amt, uint BuyPrice) public returns (uint) {
+    function addBuy(uint Amt, uint BuyPrice) public returns (uint length) {
         HederaTokenService.transferToken(address(ERC20Base), msg.sender, address(this), int64(uint64(multiply(Amt, BuyPrice))));
         Buys.push(Order(Amt, BuyPrice, block.timestamp, msg.sender, 'A'));
         emit BuyAdded(Buys.length, Amt, BuyPrice, msg.sender);
         return Buys.length;
     } 
 
-    function addSell(uint Amt, uint SellPrice) public returns (uint) {
+    function addSell(uint Amt, uint SellPrice) public returns (uint length) {
         HederaTokenService.transferToken(address(ERC20Counter), msg.sender, address(this), int64(uint64(Amt)));
         Sells.push(Order(Amt , SellPrice , block.timestamp, msg.sender, 'A'));
         emit SellAdded(Sells.length, Amt, SellPrice, msg.sender);
         return Sells.length;
     }
 
-    function viewLengthBuy() public view returns (uint) {
+    function viewLengthBuy() public view returns (uint length) {
         return Buys.length;
     }
 
-    function viewLengthSell() public view returns (uint) {
+    function viewLengthSell() public view returns (uint length) {
         return Sells.length;
     }
 
-    function viewBuy(uint OrderNo) public view returns (uint, uint, uint, address) {
+    function viewBuy(uint OrderNo) public view returns (uint amount, uint price, uint timestamp, address trader) {
         return ( 
             Buys[OrderNo-1].Amount,
             Buys[OrderNo-1].Price,
@@ -71,7 +72,7 @@ contract OrderBook is HederaTokenService {
         );
     }
 
-    function viewSell(uint OrderNo) public view returns (uint, uint, uint, address) {
+    function viewSell(uint OrderNo) public view returns (uint amount, uint price, uint timestamp, address trader) {
         return ( 
             Sells[OrderNo-1].Amount,
             Sells[OrderNo-1].Price,
@@ -80,7 +81,7 @@ contract OrderBook is HederaTokenService {
         );
     }
 
-    function buyOrder(uint OrderNo, uint Amt, uint TradePrice) public returns (uint, uint, address) {
+    function buyOrder(uint OrderNo, uint Amt, uint TradePrice) public returns (uint orderNumber, uint amount, address sender) {
         if (Sells[OrderNo-1].Amount == Amt) {
             require(TradePrice >= Sells[OrderNo-1].Price, "Invalid Price");
             HederaTokenService.transferToken(address(ERC20Base),  msg.sender, Sells[OrderNo-1].Trader, int64(uint64(multiply(Amt, Sells[OrderNo-1].Price))));
@@ -100,7 +101,7 @@ contract OrderBook is HederaTokenService {
         }
     }
 
-    function sellOrder(uint OrderNo, uint Amt, uint TradePrice) public returns (uint, uint, address) {
+    function sellOrder(uint OrderNo, uint Amt, uint TradePrice) public returns (uint orderNumber, uint amount, address sender) {
         if (Buys[OrderNo-1].Amount == Amt) {
             require(TradePrice <= Buys[OrderNo-1].Price, "Invalid Price");
             HederaTokenService.transferToken(address(ERC20Counter),  msg.sender, Buys[OrderNo-1].Trader, int64(uint64(Amt)));

@@ -84,7 +84,7 @@ async function createFungibleToken(tokenName, tokenSymbol, treasuryAccountId, su
         .setTokenName(tokenName)
         .setTokenSymbol(tokenSymbol)
         .setDecimals(8)
-        .setInitialSupply(100*1e8)
+        .setInitialSupply(1000*1e8)
         .setTreasuryAccountId(treasuryAccountId)
         .setTokenType(TokenType.FungibleCommon)
         .setSupplyType(TokenSupplyType.Infinite)
@@ -97,6 +97,9 @@ async function createFungibleToken(tokenName, tokenSymbol, treasuryAccountId, su
 
     // Sign the transaction with the token adminKey and the token treasury account private key
     const tokenCreateRx = await tokenCreateExec.getReceipt(client);
+    const tokenCreateRecord = await tokenCreateExec.getRecord(client);
+    const transactionFee = await tokenCreateRecord.transactionFee._valueInTinybar;
+    console.log("transactionFee", transactionFee);
     console.log(`- The token ID is: ${tokenCreateRx.tokenId.toString()}`);
     const tokenId = tokenCreateRx.tokenId
 
