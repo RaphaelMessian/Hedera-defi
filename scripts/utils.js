@@ -2,7 +2,7 @@ require('dotenv').config({ path: '../.env' });
 
 const { Client, AccountId, PrivateKey, AccountCreateTransaction, TokenCreateTransaction, ContractCreateFlow,
      TokenType, TokenSupplyType,TokenInfoQuery, AccountBalanceQuery, TokenMintTransaction, TransferTransaction,
-     FileCreateTransaction, FileAppendTransaction, ContractCreateTransaction} = require("@hashgraph/sdk");
+     FileCreateTransaction, FileAppendTransaction, ContractCreateTransaction, TokenAssociateTransaction} = require("@hashgraph/sdk");
 
 function getClient() {
     // const client = Client.forName(process.env.HEDERA_NETWORK);
@@ -64,6 +64,17 @@ async function storeContractFile(client, bytecode, treasuryKey) {
     console.log(`- Content added: ${fileAppendRx.status} \n`);
 
     return bytecodeFileId;
+}
+
+async function tokenAssociate(client, accountId, tokenIds, accountKey) {
+    const tokenAssociateTx = await new TokenAssociateTransaction()
+      .setAccountId(accountId)
+      .setTokenIds([tokenIds])
+      .freezeWith(client);
+    const signTx = await tokenAssociateTx.sign(accountKey);
+    const txResponse = await signTx.execute(client);
+    const receipt = await txResponse.getReceipt(client);
+    console.log(`- Token Associated: ${receipt.status} \n`);
 }
 
 async function createSmartContract(client, bytecodeFileId, gas) {
@@ -163,5 +174,6 @@ module.exports = {
     TokenTransfer,
     storeContractFile,
     createSmartContract,
-    tokenBalance
+    tokenBalance,
+    tokenAssociate
 }

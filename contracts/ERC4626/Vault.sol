@@ -7,22 +7,58 @@ import {ERC20} from "./ERC20.sol";
 import {IERC4626} from "./IERC4626.sol";
 import {FixedPointMathLib} from "./FixedPointMathLib.sol";
 import {SafeTransferLib} from "./SafeTransferLib.sol";
+import "../common/safe-HTS/SafeHTS.sol";
+import "../common/safe-HTS/IHederaTokenService.sol";
 
 contract HederaVault is IERC4626 {
 
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
+    using Bits for uint256;
 
     ERC20 public immutable asset;
+    address newTokenAddress;
     uint public totalTokens;
     address[] tokenAddress;
     address public owner;
 
-    constructor(
+    event createdToken(address indexed createdTokenAddress);
+
+    constructor (
         ERC20 _underlying,
         string memory _name,
         string memory _symbol
-    ) ERC20(_name, _symbol, _underlying.decimals()) {
+    ) payable ERC20(_name, _symbol, _underlying.decimals()) {
+        SafeHTS.safeAssociateToken(address(_underlying), address(this));
+        uint256 supplyKeyType;
+        uint256 adminKeyType;
+
+        IHederaTokenService.KeyValue memory supplyKeyValue;
+        supplyKeyType = supplyKeyType.setBit(4);
+        supplyKeyValue.delegatableContractId = address(this);
+
+        IHederaTokenService.KeyValue memory adminKeyValue;
+        adminKeyType = adminKeyType.setBit(0);
+        adminKeyValue.delegatableContractId = address(this);
+
+        IHederaTokenService.TokenKey[]
+            memory keys = new IHederaTokenService.TokenKey[](2);
+
+        keys[0] = IHederaTokenService.TokenKey(supplyKeyType, supplyKeyValue);
+        keys[1] = IHederaTokenService.TokenKey(adminKeyType, adminKeyValue);
+
+        IHederaTokenService.Expiry memory expiry;
+        expiry.autoRenewAccount = address(this);
+        expiry.autoRenewPeriod = 8000000;
+
+        IHederaTokenService.HederaToken memory newToken;
+        newToken.name = _name;
+        newToken.symbol = _symbol;
+        newToken.treasury = address(this);
+        newToken.expiry = expiry;
+        newToken.tokenKeys = keys;
+        newTokenAddress = SafeHTS.safeCreateFungibleToken(newToken, 0, _underlying.decimals());
+        emit createdToken(newTokenAddress);
         asset = _underlying;
     }
 
@@ -49,13 +85,15 @@ contract HederaVault is IERC4626 {
 
         asset.approve(address(this), amount);
 
-        _mint(to, shares);
+        asset.safeTransferFrom(msg.sender, address(this), amount);
 
         totalTokens += amount;
 
-        emit Deposit(msg.sender, to, amount, shares);
+        SafeHTS.safeMintToken(newTokenAddress, uint64(amount), new bytes[](0));
 
-        asset.safeTransferFrom(msg.sender, address(this), amount);
+        SafeHTS.safeTransferToken(newTokenAddress, address(this), msg.sender, int64(uint64(amount)));
+
+        emit Deposit(msg.sender, to, amount, shares);
 
         afterDeposit(amount);
     }
@@ -81,7 +119,11 @@ contract HederaVault is IERC4626 {
     ) public override returns (uint256 shares) {
         beforeWithdraw(amount);
 
-        _burn(from, shares = previewWithdraw(amount));
+        SafeHTS.safeTransferToken(newTokenAddress, msg.sender, address(this), int64(uint64(amount)));
+
+        SafeHTS.safeBurnToken(newTokenAddress, uint64(amount), new int64[](0));
+
+        // _burn(from, shares = previewWithdraw(amount));
         totalTokens -= amount;
 
         emit Withdraw(from, to, amount, shares);
@@ -110,7 +152,7 @@ contract HederaVault is IERC4626 {
     //////////////////////////////////////////////////////////////*/
 
     function beforeWithdraw(uint256 amount) internal {
-        claimAllReward(0);
+        // claimAllReward(0);
         userContribution[msg.sender].num_shares -= amount;
         totalTokens -= amount;
     }
@@ -176,9 +218,9 @@ contract HederaVault is IERC4626 {
     }
 
     function previewWithdraw(uint256 amount) public view override returns (uint256 shares) {
-        uint256 supply = totalSupply;
+        uint256 supply = asset.balanceOf(address(this));
 
-        return supply == 0 ? amount : amount.mulDivUp(1, totalAssets());
+        return supply == 0 ? amount : amount.mulDivUp(supply, totalAssets());
     }
 
     function previewRedeem(uint256 shares) public view override returns (uint256 amount) {
@@ -217,7 +259,15 @@ contract HederaVault is IERC4626 {
         }
         return (_startPosition, tokenAddress.length);
     }
-
-
-
 }
+
+library Bits {
+    uint256 internal constant ONE = uint256(1);
+
+    // Sets the bit at the given 'index' in 'self' to '1'.
+    // Returns the modified value.
+    function setBit(uint256 self, uint8 index) internal pure returns (uint256) {
+        return self | (ONE << index);
+    }
+}
+
