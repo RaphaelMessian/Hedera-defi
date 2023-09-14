@@ -2,7 +2,7 @@ require('dotenv').config({ path: '../.env' });
 
 const { Client, AccountId, PrivateKey, AccountCreateTransaction, TokenCreateTransaction, ContractCreateFlow,
      TokenType, TokenSupplyType,TokenInfoQuery, AccountBalanceQuery, TokenMintTransaction, TransferTransaction,
-     FileCreateTransaction, FileAppendTransaction, ContractCreateTransaction} = require("@hashgraph/sdk");
+     FileCreateTransaction, FileAppendTransaction, ContractCreateTransaction, TokenAssociateTransaction} = require("@hashgraph/sdk");
 
 function getClient() {
     // const client = Client.forName(process.env.HEDERA_NETWORK);
@@ -66,6 +66,17 @@ async function storeContractFile(client, bytecode, treasuryKey) {
     return bytecodeFileId;
 }
 
+async function tokenAssociate(client, accountId, tokenIds, accountKey) {
+    const tokenAssociateTx = await new TokenAssociateTransaction()
+      .setAccountId(accountId)
+      .setTokenIds([tokenIds])
+      .freezeWith(client);
+    const signTx = await tokenAssociateTx.sign(accountKey);
+    const txResponse = await signTx.execute(client);
+    const receipt = await txResponse.getReceipt(client);
+    console.log(`- Token Associated: ${receipt.status} \n`);
+}
+
 async function createSmartContract(client, bytecodeFileId, gas) {
     const contractTx = new ContractCreateTransaction()
       .setBytecodeFileId(bytecodeFileId)
@@ -84,7 +95,7 @@ async function createFungibleToken(tokenName, tokenSymbol, treasuryAccountId, su
         .setTokenName(tokenName)
         .setTokenSymbol(tokenSymbol)
         .setDecimals(8)
-        .setInitialSupply(100*1e8)
+        .setInitialSupply(1000*1e8)
         .setTreasuryAccountId(treasuryAccountId)
         .setTokenType(TokenType.FungibleCommon)
         .setSupplyType(TokenSupplyType.Infinite)
@@ -97,6 +108,10 @@ async function createFungibleToken(tokenName, tokenSymbol, treasuryAccountId, su
 
     // Sign the transaction with the token adminKey and the token treasury account private key
     const tokenCreateRx = await tokenCreateExec.getReceipt(client);
+    const tokenCreateRecord = await tokenCreateExec.getRecord(client);
+    const transactionFee = await tokenCreateRecord.transactionFee._valueInTinybar;
+    console.log("transactionFee", transactionFee);
+    console.log(`- The token ID is: ${tokenCreateRx.tokenId.toString()}`);
     const tokenId = tokenCreateRx.tokenId
 
     return tokenId;
@@ -140,6 +155,14 @@ async function TokenTransfer(tokenId, sender, receiver, amount, client) {
     return transferTokenRx;
 }
 
+async function tokenBalance(accountId, client) {
+    const query = new AccountBalanceQuery()
+                .setAccountId(accountId);
+    const tokenBalance = await query.execute(client);
+
+    return tokenBalance
+}
+
 module.exports = {
     createAccount,
     deployContract,
@@ -150,5 +173,7 @@ module.exports = {
     getClient,
     TokenTransfer,
     storeContractFile,
-    createSmartContract
+    createSmartContract,
+    tokenBalance,
+    tokenAssociate
 }
