@@ -16,13 +16,13 @@ client.setOperator(
   operatorPrKey
 );
 
-const rawdataUnderlyingToken = fs.readFileSync(`${__dirname}/../artifacts/contracts/ERC4626/VaultToken.sol/VaultToken.json`);
+const rawdataUnderlyingToken = fs.readFileSync(`${__dirname}/../artifacts/contracts/ERC4626/lab49Vault/VaultToken.sol/VaultToken.json`);
 const rawdataUnderlyingTokenJSon = JSON.parse(rawdataUnderlyingToken);
 const underlyingTokenAbi = rawdataUnderlyingTokenJSon.abi;
-const rawdataERC4626 = fs.readFileSync(`${__dirname}/../artifacts/contracts/ERC4626/Vault.sol/HederaVault.json`);
-const rawdataERC4626ContractJSon = JSON.parse(rawdataERC4626);
-const ERC4626ContractByteCode = rawdataERC4626ContractJSon.bytecode;
-const ERC4626Abi = rawdataERC4626ContractJSon.abi;
+const rawdataBasicHedera4626 = fs.readFileSync(`${__dirname}/../artifacts/contracts/ERC4626/Hedera4626/SimpleVault.sol/SimpleVault.json`);
+const rawdataBasicHedera4626ContractJSon = JSON.parse(rawdataBasicHedera4626);
+const basicHedera4626ContractByteCode = rawdataBasicHedera4626ContractJSon.bytecode;
+const basicHedera4626Abi = rawdataBasicHedera4626ContractJSon.abi;
 
 async function main() {
 
@@ -61,10 +61,10 @@ async function main() {
         underlyingTokenAddress
     );
 
-    const deploySimpleVault = new web3.eth.Contract(ERC4626Abi);
+    const deploySimpleVault = new web3.eth.Contract(basicHedera4626Abi);
     let simpleVault = await deploySimpleVault
         .deploy({
-            data: ERC4626ContractByteCode,
+            data: basicHedera4626ContractByteCode,
             arguments: [underlyingTokenAddress, 'test', 'T']
         })
         .send({
@@ -74,12 +74,12 @@ async function main() {
             value: web3.utils.toBN(20_000_000_000_000_000_000)
         })
         .on("receipt", receipt => {
-            console.log(receipt);
+            console.log("Contract Address", receipt.contractAddress);
             simpleVaultAddress = receipt.contractAddress;
         });
 
     const contracSimpleVault = new web3.eth.Contract(
-        ERC4626Abi,
+        basicHedera4626Abi,
         simpleVaultAddress
     );
 
@@ -105,21 +105,21 @@ async function main() {
             });
     console.log("Approval", approveVault);
         
-    let deposit = await contracSimpleVault.methods.deposit(10, accountAddress)
+    let deposit = await contracSimpleVault.methods._deposit(10, accountAddress)
         .send({ from: accountAddress,  gas: 1000000 })
             .on("receipt", (receipt) => {
                 console.log(receipt);
                 console.log("Transaction hash", receipt.transactionHash);
             });
 
-    let totalAssets = await contracSimpleVault.methods.totalAssets().call();
-    console.log("totalAssets on the vault", totalAssets);
+    // let totalAssets = await contracSimpleVault.methods.totalAssets().call();
+    // console.log("totalAssets on the vault", totalAssets);
 
-    // let result2 = await contracSimpleVault.methods.balanceOf(accountAddress).call();
-    // console.log("balance of underlying token", result2);
+    // // let result2 = await contracSimpleVault.methods.balanceOf(accountAddress).call();
+    // // console.log("balance of underlying token", result2);
 
-    // let result1 = await contracSimpleVault.methods.totalSupply().call();
-    // console.log("TotalSupply of underlying token", result1);
+    // // let result1 = await contracSimpleVault.methods.totalSupply().call();
+    // // console.log("TotalSupply of underlying token", result1);
 
     let approveVaultForWithdraw = await newCreatedToken.methods.approve(simpleVaultAddress, 10)
     .send({ from: accountAddress, gas: 1000000 })

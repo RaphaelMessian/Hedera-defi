@@ -3,12 +3,12 @@
 pragma solidity ^0.8;
 pragma abicoder v2;
 
-import {ERC20} from "./ERC20.sol";
-import {IERC4626} from "./IERC4626.sol";
-import {FixedPointMathLib} from "./FixedPointMathLib.sol";
-import {SafeTransferLib} from "./SafeTransferLib.sol";
-import "../common/safe-HTS/SafeHTS.sol";
-import "../common/safe-HTS/IHederaTokenService.sol";
+import {ERC20} from "../ERC20.sol";
+import {IERC4626} from "../IERC4626.sol";
+import {FixedPointMathLib} from "../FixedPointMathLib.sol";
+import {SafeTransferLib} from "../SafeTransferLib.sol";
+import "../../common/safe-HTS/SafeHTS.sol";
+import "../../common/safe-HTS/IHederaTokenService.sol";
 
 contract HederaVault is IERC4626 {
 
