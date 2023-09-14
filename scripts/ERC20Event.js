@@ -34,7 +34,7 @@ async function main() {
         );
     const accountAddress = web3.utils.toChecksumAddress(account.address);
     web3.eth.defaultAccount = account.address;
-    console.log("accountAddress", web3.utils.toChecksumAddress(accountAddress));
+    console.log(`- accountAddress`, web3.utils.toChecksumAddress(accountAddress));
 
     web3.eth.accounts.wallet.add(account);
 
@@ -56,18 +56,16 @@ async function main() {
     let approve = await contractTestEvent.methods.approve(aliceAccountId.toSolidityAddress(), 10)
     .send({ from: accountAddress, gas: 1000000 })
         .on("receipt", (receipt) => {
-          console.log(receipt);
-          console.log("Transaction hash", receipt.transactionHash);
+          console.log(`- Approval Transaction hash`, receipt.transactionHash);
         });
-    console.log("Approval", approve);
+    console.log(`- Approval`, approve);
 
     let transfer = await contractTestEvent.methods.transfer(aliceAccountId.toSolidityAddress(), 10)
     .send({ from: accountAddress, gas: 1000000 })
         .on("receipt", (receipt) => {
-          console.log(receipt);
-          console.log("Transaction hash", receipt.transactionHash);
+          console.log(`- Transfer Transaction hash`, receipt.transactionHash);
         });
-    console.log("Transfer", transfer);
+    console.log(`- Transfer`, transfer);
 
 }
 main();

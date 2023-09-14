@@ -117,15 +117,50 @@ async function createFungibleToken(tokenName, tokenSymbol, treasuryAccountId, su
     return tokenId;
 }    
 
+
+async function createNFT(tokenName, tokenSymbol, treasuryAccountId, supplyPublicKey, client, privateKey) {
+    // Create the transaction and freeze for manual signing
+    const tokenCreateTx = await new TokenCreateTransaction()
+        .setTokenName(tokenName)
+        .setTokenSymbol(tokenSymbol)
+        .setDecimals(0)
+        .setInitialSupply(0)
+        .setTreasuryAccountId(treasuryAccountId)
+        .setTokenType(TokenType.NonFungibleUnique)
+        .setSupplyType(TokenSupplyType.Finite)
+        .setMaxSupply(10)
+        .setSupplyKey(supplyPublicKey)
+        .freezeWith(client);
+        
+    
+    const tokenCreateSign = await tokenCreateTx.sign(privateKey);
+    const tokenCreateExec = await tokenCreateTx.execute(client);
+
+    // Sign the transaction with the token adminKey and the token treasury account private key
+    const tokenCreateRx = await tokenCreateExec.getReceipt(client);
+    const tokenCreateRecord = await tokenCreateExec.getRecord(client);
+    const transactionFee = await tokenCreateRecord.transactionFee._valueInTinybar;
+    console.log("transactionFee", transactionFee);
+    console.log(`- The token ID is: ${tokenCreateRx.tokenId.toString()}`);
+    const tokenId = tokenCreateRx.tokenId
+
+    return tokenId;
+}    
+
 async function mintToken(tokenId, client, amount, privatekey) {
     const tokenMintTx = await new TokenMintTransaction()
         .setTokenId(tokenId)
-        .setAmount(amount*1e8)
-        .freezeWith(client)
-        .sign(privatekey);
+        if (amount) {
+            tokenMintTx.setAmount(amount*1e8);
+        } else {
+            tokenMintTx.addMetadata([0])
+        }
+        tokenMintTx.freezeWith(client)
+        tokenMintTx.sign(privatekey);
 
     const tokenMintExec = await tokenMintTx.execute(client);
     const tokenMintRx = await tokenMintExec.getReceipt(client);
+    console.log(`- Token mint transaction status`, tokenMintRx.status.toString());
 
     return tokenMintRx;
 }
@@ -167,7 +202,6 @@ module.exports = {
     createAccount,
     deployContract,
     createFungibleToken,
-    mintToken,
     tokenQuery,
     TokenBalance,
     getClient,
@@ -175,5 +209,7 @@ module.exports = {
     storeContractFile,
     createSmartContract,
     tokenBalance,
-    tokenAssociate
+    tokenAssociate,
+    createNFT,
+    mintToken
 }
