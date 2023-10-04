@@ -1,6 +1,6 @@
 console.clear();
 const  {getClient, createAccount, createFungibleToken} = require("./utils");
-const { AccountId, PrivateKey, TokenAssociateTransaction} = require("@hashgraph/sdk");
+const { AccountId, PrivateKey, TokenAssociateTransaction, TransferTransaction} = require("@hashgraph/sdk");
 require('dotenv').config({path: __dirname + '../.env'});
 const Web3 = require("web3");
 const fs = require('fs');
@@ -18,6 +18,7 @@ client.setOperator(
 const rawdataUnderlyingToken = fs.readFileSync(`${__dirname}/../artifacts/contracts/ERC4626/lab49Vault/VaultToken.sol/VaultToken.json`);
 const rawdataUnderlyingTokenJSon = JSON.parse(rawdataUnderlyingToken);
 const underlyingTokenAbi = rawdataUnderlyingTokenJSon.abi;
+
 
 async function main() {
 
@@ -53,20 +54,51 @@ async function main() {
     const tokenAssociateReceipt = await tokenAssociate.getReceipt(aliceClient);
     console.log(`- tokenAssociateReceipt ${tokenAssociateReceipt.status.toString()}`);
 
-    let approve = await contractTestEvent.methods.approve(aliceAccountId.toSolidityAddress(), 10)
-    .send({ from: accountAddress, gas: 1000000 })
-        .on("receipt", (receipt) => {
-          console.log(`- Approval Transaction hash`, receipt.transactionHash);
-        });
-    console.log(`- Approval`, approve);
+    const transaction = await new TransferTransaction()
+        .addTokenTransfer(testToken, operatorAccountId, -1)
+        .addTokenTransfer(testToken, aliceAccountId, 1)
+        .freezeWith(client);
 
-    let transfer = await contractTestEvent.methods.transfer(aliceAccountId.toSolidityAddress(), 10)
-    .send({ from: accountAddress, gas: 1000000 })
-        .on("receipt", (receipt) => {
-          console.log(`- Transfer Transaction hash`, receipt.transactionHash);
-        });
-    console.log(`- Transfer`, transfer);
+    //Sign with the sender account private key
+    const signTx = await transaction.sign(operatorPrKey);
 
+    //Sign with the client operator private key and submit to a Hedera network
+    const txResponse = await signTx.execute(client);
+
+    //Request the receipt of the transaction
+    const receipt = await txResponse.getReceipt(client);
+    const record = await txResponse.getRecord(client);
+
+    //Obtain the transaction consensus status
+    const transactionStatus = receipt.status;
+
+    console.log("The transaction consensus status " +transactionStatus.toString());
+    console.log("The transaction consensus status " + record.transactionHash[0].toString());
+
+
+    // let approve = await contractTestEvent.methods.approve(aliceAccountId.toSolidityAddress(), 10)
+    // .send({ from: accountAddress, gas: 1000000 })
+    //     .on("receipt", (receipt) => {
+    //       console.log(`- Approval Transaction hash`, receipt.transactionHash);
+    //     });
+    // console.log(`- Approval`, approve);
+
+    // let transfer = await contractTestEvent.methods.transfer(aliceAccountId.toSolidityAddress(), 10)
+    // .send({ from: accountAddress, gas: 1000000 })
+    //     .on("receipt", (receipt) => {
+    //       console.log(`- Transfer Transaction hash`, receipt.transactionHash);
+    //     });
+    // console.log(`- Transfer`, transfer);
+
+    // const testTokenEvent = new web3.eth.Contract(
+    //     underlyingTokenAbi,
+    //     "0x00000000000000000000000000000000004439a8"
+    // );
+
+    let getEvent = await contractTestEvent.getPastEvents('Transfer', {}, function(error, events) { 
+        console.log("event", events); 
+    }).then(function(events) {
+    });
 }
 main();
 

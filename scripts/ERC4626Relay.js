@@ -16,10 +16,10 @@ client.setOperator(
   operatorPrKey
 );
 
-const rawdataUnderlyingToken = fs.readFileSync(`${__dirname}/../artifacts/contracts/ERC4626/VaultToken.sol/VaultToken.json`);
+const rawdataUnderlyingToken = fs.readFileSync(`${__dirname}/../artifacts/contracts/ERC4626/lab49Vault/VaultToken.sol/VaultToken.json`);
 const rawdataUnderlyingTokenJSon = JSON.parse(rawdataUnderlyingToken);
 const underlyingTokenAbi = rawdataUnderlyingTokenJSon.abi;
-const rawdataERC4626 = fs.readFileSync(`${__dirname}/../artifacts/contracts/ERC4626/Vault.sol/HederaVault.json`);
+const rawdataERC4626 = fs.readFileSync(`${__dirname}/../artifacts/contracts/ERC4626/lab49Vault/Vault.sol/HederaVault.json`);
 const rawdataERC4626ContractJSon = JSON.parse(rawdataERC4626);
 const ERC4626ContractByteCode = rawdataERC4626ContractJSon.bytecode;
 const ERC4626Abi = rawdataERC4626ContractJSon.abi;
@@ -115,26 +115,38 @@ async function main() {
     let totalAssets = await contracSimpleVault.methods.totalAssets().call();
     console.log("totalAssets on the vault", totalAssets);
 
+    let test = await newCreatedToken.getPastEvents('Transfer', {}, function(error, events) { 
+        console.log(events); 
+    }).then(function(events) {
+        console.log(events)
+    });
+
     // let result2 = await contracSimpleVault.methods.balanceOf(accountAddress).call();
     // console.log("balance of underlying token", result2);
 
     // let result1 = await contracSimpleVault.methods.totalSupply().call();
     // console.log("TotalSupply of underlying token", result1);
 
-    let approveVaultForWithdraw = await newCreatedToken.methods.approve(simpleVaultAddress, 10)
-    .send({ from: accountAddress, gas: 1000000 })
-        .on("receipt", (receipt) => {
-          console.log(receipt);
-          console.log("Transaction hash", receipt.transactionHash);
-        });
-    console.log("Approval for Withdraw", approveVaultForWithdraw);
+    // let approveVaultForWithdraw = await newCreatedToken.methods.approve(simpleVaultAddress, 10)
+    // .send({ from: accountAddress, gas: 1000000 })
+    //     .on("receipt", (receipt) => {
+    //       console.log(receipt);
+    //       console.log("Transaction hash", receipt.transactionHash);
+    //     });
+    // console.log("Approval for Withdraw", approveVaultForWithdraw);
 
-    let withdraw = await contracSimpleVault.methods._withdraw(10, accountAddress)
-    .send({ from: accountAddress,  gas: 1000000 })
-        .on("receipt", (receipt) => {
-            console.log(receipt);
-            console.log("Transaction hash", receipt.transactionHash);
-        });
+    // let withdraw = await contracSimpleVault.methods._withdraw(10, accountAddress)
+    // .send({ from: accountAddress,  gas: 1000000 })
+    //     .on("receipt", (receipt) => {
+    //         console.log(receipt);
+    //         console.log("Transaction hash", receipt.transactionHash);
+    //     });
+
+    // let test = await newCreatedToken.getPastEvents('Transfer', {}, function(error, events) { 
+    //     console.log(events); 
+    // }).then(function(events) {
+    //     console.log(events)
+    // });
 
 };
 
