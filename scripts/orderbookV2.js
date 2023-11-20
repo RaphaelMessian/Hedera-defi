@@ -38,48 +38,48 @@ async function main() {
     console.log(`- accountAddress`, web3.utils.toChecksumAddress(accountAddress));
     web3.eth.accounts.wallet.add(account);
 
-    const aliceAccount = web3.eth.accounts.privateKeyToAccount(process.env.ALICE_ETH_PRIVATE_KEY);
-    const aliceAccountAddress = web3.utils.toChecksumAddress(aliceAccount.address);
-    web3.eth.defaultAccount = aliceAccount.address;
-    console.log(`- Alice accountAddress`, web3.utils.toChecksumAddress(aliceAccountAddress));
-    web3.eth.accounts.wallet.add(aliceAccount);
+    // const aliceAccount = web3.eth.accounts.privateKeyToAccount(process.env.ALICE_ETH_PRIVATE_KEY);
+    // const aliceAccountAddress = web3.utils.toChecksumAddress(aliceAccount.address);
+    // web3.eth.defaultAccount = aliceAccount.address;
+    // console.log(`- Alice accountAddress`, web3.utils.toChecksumAddress(aliceAccountAddress));
+    // web3.eth.accounts.wallet.add(aliceAccount);
 
-    //Create gold token for the operator
-    const goldToken = await createFungibleToken("goldToken", "GT", operatorAccountId, operatorPrKey.publicKey, client, operatorPrKey);
-    //Create quote token (stable coin) for Alice
-    client.setOperator(aliceAccountId, alicePrKey);
-    const stableCoin = await createFungibleToken("stableToken","ST", aliceAccountId, alicePrKey.publicKey, client, alicePrKey);
+    // //Create gold token for the operator
+    // const goldToken = await createFungibleToken("goldToken", "GT", operatorAccountId, operatorPrKey.publicKey, client, operatorPrKey);
+    // //Create quote token (stable coin) for Alice
+    // client.setOperator(aliceAccountId, alicePrKey);
+    // const stableCoin = await createFungibleToken("stableToken","ST", aliceAccountId, alicePrKey.publicKey, client, alicePrKey);
 
-    const tokenAssociateForAlice = await new TokenAssociateTransaction()
-        .setAccountId(aliceAccountId)
-        .setTokenIds([goldToken])
-        .execute(client);
+    // const tokenAssociateForAlice = await new TokenAssociateTransaction()
+    //     .setAccountId(aliceAccountId)
+    //     .setTokenIds([goldToken])
+    //     .execute(client);
 
-    const tokenAssociateForAliceReceipt = await tokenAssociateForAlice.getReceipt(client);
-    console.log(`- Alice token Associate status ${tokenAssociateForAliceReceipt.status.toString()}`);
+    // const tokenAssociateForAliceReceipt = await tokenAssociateForAlice.getReceipt(client);
+    // console.log(`- Alice token Associate status ${tokenAssociateForAliceReceipt.status.toString()}`);
     
-    client.setOperator(operatorAccountId, operatorPrKey);
-    const tokenAssociateOperator = await new TokenAssociateTransaction()
-    .setAccountId(operatorAccountId)
-    .setTokenIds([stableCoin])
-    .execute(client);
+    // client.setOperator(operatorAccountId, operatorPrKey);
+    // const tokenAssociateOperator = await new TokenAssociateTransaction()
+    // .setAccountId(operatorAccountId)
+    // .setTokenIds([stableCoin])
+    // .execute(client);
 
-    const tokenAssociateOperatorReceipt = await tokenAssociateOperator.getReceipt(client);
-    console.log(`- Operator token Associate status ${tokenAssociateOperatorReceipt.status.toString()}`);
+    // const tokenAssociateOperatorReceipt = await tokenAssociateOperator.getReceipt(client);
+    // console.log(`- Operator token Associate status ${tokenAssociateOperatorReceipt.status.toString()}`);
 
-    let goldTokenAddress = goldToken.toSolidityAddress();
+    // let goldTokenAddress = goldToken.toSolidityAddress();
 
-    let stableCoinAddress = stableCoin.toSolidityAddress();
+    // let stableCoinAddress = stableCoin.toSolidityAddress();
     
-    const contractGoldToken = new web3.eth.Contract(
-        underlyingTokenAbi,
-        goldTokenAddress
-    );
+    // const contractGoldToken = new web3.eth.Contract(
+    //     underlyingTokenAbi,
+    //     goldTokenAddress
+    // );
 
-    const contractStableCoin = new web3.eth.Contract(
-        underlyingTokenAbi,
-        stableCoinAddress
-    );
+    // const contractStableCoin = new web3.eth.Contract(
+    //     underlyingTokenAbi,
+    //     stableCoinAddress
+    // );
 
     let orderBookV2Address;
 
@@ -104,40 +104,40 @@ async function main() {
         orderBookV2Address
     );
 
-    let approveForSellOrder = await contractGoldToken.methods.approve(orderBookV2Address, 100)
-    .send({ from: accountAddress, gas: 1000000 })
-        .on("receipt", (receipt) => {
-          console.log(receipt);
-          console.log("Transaction hash", receipt.transactionHash);
-        });
+    // let approveForSellOrder = await contractGoldToken.methods.approve(orderBookV2Address, 100)
+    // .send({ from: accountAddress, gas: 1000000 })
+    //     .on("receipt", (receipt) => {
+    //       console.log(receipt);
+    //       console.log("Transaction hash", receipt.transactionHash);
+    //     });
 
-    let postSellOrder =  await contracOrderBookV2.methods.placeOrder(1, 10, goldTokenAddress, stableCoinAddress, false)
-    .send({ from: accountAddress,  gas: 1000000 })
-        .on("receipt", (receipt) => {
-            console.log(receipt);
-            console.log("Transaction hash", receipt.transactionHash);
-        });
+    // let postSellOrder =  await contracOrderBookV2.methods.placeOrder(1, 10, goldTokenAddress, stableCoinAddress, false)
+    // .send({ from: accountAddress,  gas: 1000000 })
+    //     .on("receipt", (receipt) => {
+    //         console.log(receipt);
+    //         console.log("Transaction hash", receipt.transactionHash);
+    //     });
 
-    let approveForBuyOrder = await contractStableCoin.methods.approve(orderBookV2Address, 100)
-    .send({ from: aliceAccountAddress, gas: 1000000 })
-        .on("receipt", (receipt) => {
-            console.log(receipt);
-            console.log("Transaction hash", receipt.transactionHash);
-    });
+    // let approveForBuyOrder = await contractStableCoin.methods.approve(orderBookV2Address, 100)
+    // .send({ from: aliceAccountAddress, gas: 1000000 })
+    //     .on("receipt", (receipt) => {
+    //         console.log(receipt);
+    //         console.log("Transaction hash", receipt.transactionHash);
+    // });
 
-    let postBuyOrder =  await contracOrderBookV2.methods.placeOrder(1, 7, goldTokenAddress, stableCoinAddress, true)
-    .send({ from: aliceAccountAddress,  gas: 1000000 })
-        .on("receipt", (receipt) => {
-            console.log(receipt);
-            console.log("Transaction hash", receipt.transactionHash);
-        });
+    // let postBuyOrder =  await contracOrderBookV2.methods.placeOrder(1, 7, goldTokenAddress, stableCoinAddress, true)
+    // .send({ from: aliceAccountAddress,  gas: 1000000 })
+    //     .on("receipt", (receipt) => {
+    //         console.log(receipt);
+    //         console.log("Transaction hash", receipt.transactionHash);
+    //     });
 
-    let postBuyOrder2 =  await contracOrderBookV2.methods.placeOrder(1, 3, goldTokenAddress, stableCoinAddress, true)
-        .send({ from: aliceAccountAddress,  gas: 1000000 })
-            .on("receipt", (receipt) => {
-                console.log(receipt);
-                console.log("Transaction hash", receipt.transactionHash);
-            });
+    // let postBuyOrder2 =  await contracOrderBookV2.methods.placeOrder(1, 3, goldTokenAddress, stableCoinAddress, true)
+    //     .send({ from: aliceAccountAddress,  gas: 1000000 })
+    //         .on("receipt", (receipt) => {
+    //             console.log(receipt);
+    //             console.log("Transaction hash", receipt.transactionHash);
+    //         });
 
 }
 main();

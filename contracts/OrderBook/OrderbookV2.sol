@@ -21,7 +21,6 @@ contract OrderBookV2 {
     Order[] public bidOrders;
     Order[] public askOrders;
     
-
     // Events
     event OrderCanceled(
             uint256 indexed orderId,

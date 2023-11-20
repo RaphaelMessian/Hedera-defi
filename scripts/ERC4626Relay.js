@@ -16,10 +16,10 @@ client.setOperator(
   operatorPrKey
 );
 
-const rawdataUnderlyingToken = fs.readFileSync(`${__dirname}/../artifacts/contracts/ERC4626/VaultToken.sol/VaultToken.json`);
+const rawdataUnderlyingToken = fs.readFileSync(`${__dirname}/../artifacts/contracts/ERC4626/lab49Vault/VaultToken.sol/VaultToken.json`);
 const rawdataUnderlyingTokenJSon = JSON.parse(rawdataUnderlyingToken);
 const underlyingTokenAbi = rawdataUnderlyingTokenJSon.abi;
-const rawdataERC4626 = fs.readFileSync(`${__dirname}/../artifacts/contracts/ERC4626/Vault.sol/HederaVault.json`);
+const rawdataERC4626 = fs.readFileSync(`${__dirname}/../artifacts/contracts/ERC4626/lab49Vault/Vault.sol/HederaVault.json`);
 const rawdataERC4626ContractJSon = JSON.parse(rawdataERC4626);
 const ERC4626ContractByteCode = rawdataERC4626ContractJSon.bytecode;
 const ERC4626Abi = rawdataERC4626ContractJSon.abi;
