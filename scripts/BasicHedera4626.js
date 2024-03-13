@@ -69,7 +69,7 @@ async function main() {
         })
         .send({
             from: accountAddress,
-            gas: 1000000,
+            gas: 4000000,
             gaslimit: 4000000,
             value: web3.utils.toBN(20_000_000_000_000_000_000)
         })
